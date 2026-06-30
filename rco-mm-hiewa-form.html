@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MM Hiewa Retail Customer Order</title>
+  <style>
+    * { box-sizing:border-box; }
+    :root { --blue:#1665d8; --ink:#172033; --muted:#697386; }
+    body { margin:0; background:#edf1f6; color:var(--ink); font-family:Arial,"Noto Sans SC",sans-serif; }
+    .app { display:grid; grid-template-columns:370px minmax(600px, 794px); justify-content:center; align-items:start; gap:26px; padding:26px; }
+    .panel { position:sticky; top:26px; background:#fff; padding:23px; border-radius:16px; box-shadow:0 10px 32px rgba(27,39,63,.12); }
+    h1 { font-size:21px; margin:0 0 7px; }
+    .intro { margin:0 0 20px; color:var(--muted); font-size:13px; line-height:1.55; }
+    label { display:block; font-size:13px; font-weight:700; margin:14px 0 6px; }
+    input, textarea { width:100%; padding:10px 11px; border:1px solid #cbd3df; border-radius:9px; font:inherit; outline:none; }
+    textarea { min-height:78px; resize:vertical; }
+    input:focus, textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(22,101,216,.12); }
+    .buttons { display:flex; gap:9px; margin-top:20px; }
+    button { border:0; border-radius:9px; padding:12px 15px; font-weight:750; cursor:pointer; }
+    #print { flex:1; background:var(--blue); color:#fff; }
+    #clear { background:#ebeff5; color:var(--ink); }
+    #layoutMode { width:100%; margin-top:10px; background:#fff4d9; color:#7a5100; border:1px solid #efd38b; }
+    #resetLayout { width:100%; margin-top:7px; background:#f5eaea; color:#983737; display:none; }
+    .layout-help { display:none; padding:10px 12px; margin-top:8px; border-radius:8px; background:#fff8e8; color:#755619; font-size:11px; line-height:1.55; }
+    .layout-help.show { display:block; }
+    .tip { color:var(--muted); font-size:11px; line-height:1.5; margin:11px 0 0; }
+    .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .check-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-top:6px; }
+    .check-grid.three { grid-template-columns:1fr 1fr 1fr; }
+    .check-grid label { display:flex; align-items:center; gap:6px; margin:0; font-size:11px; font-weight:600; }
+    .check-grid input { width:auto; margin:0; }
+    .section-title { margin-top:18px; padding-top:14px; border-top:1px solid #e4e9f1; color:#42526e; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .accessory-row { display:grid; grid-template-columns:1fr 105px 34px; gap:7px; margin-top:7px; }
+    .accessory-row button { padding:0; background:#f4e8e8; color:#a23232; font-size:18px; }
+    .add-accessory { width:100%; margin-top:8px; background:#eaf1ff; color:#1557b0; }
+    .total-card { display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding:14px; border-radius:10px; background:#edf4ff; }
+    .total-card span { font-size:12px; color:var(--muted); }
+    .total-card strong { color:var(--blue); font-size:20px; }
+    .page-wrap { overflow:auto; box-shadow:0 12px 35px rgba(24,37,61,.15); }
+    .page { position:relative; width:794px; height:1123px; background:#fff; overflow:hidden; }
+    .template { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+    .value { position:absolute; z-index:2; font-family:Arial,sans-serif; color:#0645ad; font-size:10px; font-weight:700; line-height:1.3; white-space:pre-wrap; overflow:hidden; }
+    .page.edit-mode .value { pointer-events:auto; cursor:move; outline:1px dashed #ff7a00; background:rgba(255,246,204,.78); min-width:35px; min-height:14px; overflow:visible; }
+    .page.edit-mode .value::before { content:attr(data-label); position:absolute; left:0; bottom:100%; background:#ff7a00; color:#fff; font-size:8px; line-height:1; padding:2px 3px; white-space:nowrap; }
+    .page.edit-mode .value::after { content:""; position:absolute; right:-4px; bottom:-4px; width:10px; height:10px; border-right:2px solid #e44b00; border-bottom:2px solid #e44b00; background:rgba(255,255,255,.75); cursor:nwse-resize; }
+    .page.edit-mode .value.selected { outline:2px solid #e44b00; background:rgba(255,224,151,.82); }
+    .name-address { left:4.0%; top:12.3%; width:50.1%; height:8.7%; font-size:11px; background:rgba(255,255,255,.94); padding:3px 4px; }
+    .ic { left:15.9%; top:20.1%; width:35.7%; height:1.6%; background:#fff; padding:1px 3px; }
+    .email { left:15.9%; top:22.35%; width:35.7%; height:1.6%; background:#fff; padding:1px 3px; }
+    .phone { left:15.9%; top:24.65%; width:35.7%; height:1.6%; background:#fff; padding:1px 3px; }
+    .date { left:75.4%; top:11.2%; width:17%; height:1.45%; background:#fff; padding:1px 3px; }
+    .model { left:70.6%; top:16.9%; width:24.2%; height:1.7%; background:#fff; padding:1px 3px; }
+    .model-code { left:70.6%; top:14.6%; width:24.2%; height:1.7%; background:#fff; padding:1px 3px; }
+    .color-code { left:70.6%; top:19.2%; width:24.2%; height:1.7%; background:#fff; padding:1px 3px; }
+    .color-name { left:70.6%; top:21.5%; width:24.2%; height:1.7%; background:#fff; padding:1px 3px; }
+    .year-manufacture { left:70.6%; top:23.85%; width:24.2%; height:1.7%; background:#fff; padding:1px 3px; }
+    .hire-tenure { left:70.6%; top:30.2%; width:13%; height:1.55%; background:#fff; padding:1px 3px; }
+    .remarks { left:56.8%; top:54.25%; width:39%; height:11.65%; background:rgba(255,255,255,.96); padding:3px 5px; font-size:9.5px; }
+    .price { left:39.1%; top:32.0%; width:15.5%; height:1.7%; background:#fff; text-align:right; padding:2px 5px; font-size:10.5px; }
+    .exclusive-color-price { left:39.1%; top:34.15%; width:15.5%; height:1.7%; background:#fff; text-align:right; padding:2px 5px; font-size:10.5px; }
+    .accessories-output { left:5.8%; top:40.6%; width:30.8%; height:10.2%; background:rgba(255,255,255,.96); padding:2px 4px; font-size:9.5px; }
+    .accessories-price { left:39.1%; top:40.6%; width:15.5%; height:10.2%; background:rgba(255,255,255,.96); text-align:right; padding:2px 5px; font-size:9.5px; }
+    .insurance { left:39.1%; top:66.1%; width:15.5%; height:1.55%; background:#fff; text-align:right; padding:1px 5px; }
+    .total { left:39.1%; top:68.3%; width:15.5%; height:1.55%; background:#fff; text-align:right; padding:1px 5px; }
+    .registration-fee { left:39.1%; top:57.45%; width:15.5%; height:1.45%; background:#fff; text-align:right; padding:1px 5px; }
+    .ownership-fee { left:39.1%; top:59.45%; width:15.5%; height:1.45%; background:#fff; text-align:right; padding:1px 5px; }
+    .road-tax { left:39.1%; top:61.35%; width:15.5%; height:1.45%; background:#fff; text-align:right; padding:1px 5px; }
+    .puspakom { left:39.1%; top:63.25%; width:15.5%; height:1.45%; background:#fff; text-align:right; padding:1px 5px; }
+    .other-charges { left:39.1%; top:64.9%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .booking-fee { left:39.1%; top:79.2%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .amount-due { left:39.1%; top:81.25%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .outlet-code { left:64.4%; top:11.25%; width:4.2%; height:1.45%; background:#fff; text-align:center; padding:1px 2px; }
+    .sales-advisor { left:11.1%; top:29.1%; width:42%; height:1.4%; background:#fff; padding:1px 4px; }
+    .sum-insured { left:19.0%; top:66.0%; width:11.8%; height:1.55%; background:#fff; text-align:right; padding:1px 4px; }
+    .e-discount { left:39.1%; top:70.0%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .trade-in-less { left:39.1%; top:73.0%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .hp-settlement { left:39.1%; top:75.15%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .net-invoice { left:39.1%; top:76.75%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .loan-amount { left:39.1%; top:83.25%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .customer-balance { left:39.1%; top:84.9%; width:15.5%; height:1.35%; background:#fff; text-align:right; padding:1px 5px; }
+    .delivery-date { left:69.1%; top:50.95%; width:25.6%; height:1.45%; background:#fff; padding:1px 3px; }
+    .reg-number { left:64.0%; top:36.4%; width:14.3%; height:1.45%; background:#fff; padding:1px 3px; }
+    .trade-model { left:70.0%; top:40.75%; width:24.5%; height:1.45%; background:#fff; padding:1px 3px; }
+    .trade-reg { left:70.0%; top:42.95%; width:24.5%; height:1.45%; background:#fff; padding:1px 3px; }
+    .trade-year { left:70.0%; top:45.15%; width:24.5%; height:1.45%; background:#fff; padding:1px 3px; }
+    .trade-appraisal { left:70.0%; top:47.35%; width:24.5%; height:1.45%; background:#fff; padding:1px 3px; }
+    .agreement-deposit { left:19.1%; top:87.55%; width:11.5%; height:1.35%; background:#fff; text-align:right; padding:1px 4px; }
+    .agreement-receipt { left:74.7%; top:87.55%; width:19%; height:1.35%; background:#fff; padding:1px 4px; }
+    .checkmark { font-size:12px; text-align:center; line-height:1; color:#0645ad; background:transparent; }
+    .reg-individual { left:14.7%; top:27.45%; width:1.3%; height:1.2%; }
+    .reg-private-company { left:27.6%; top:27.45%; width:1.3%; height:1.2%; }
+    .reg-commercial { left:42.9%; top:27.45%; width:1.3%; height:1.2%; }
+    .purchase-hire { left:70.35%; top:27.45%; width:1.3%; height:1.2%; }
+    .purchase-cash { left:79.9%; top:27.45%; width:1.3%; height:1.2%; }
+    .purchase-order { left:86.6%; top:27.45%; width:1.3%; height:1.2%; }
+    .finance-pbb { left:70.35%; top:29.25%; width:1.3%; height:1.2%; }
+    .finance-mbb { left:74.4%; top:29.25%; width:1.3%; height:1.2%; }
+    .finance-tcap { left:78.7%; top:29.25%; width:1.3%; height:1.2%; }
+    .finance-hlb { left:84.1%; top:29.25%; width:1.3%; height:1.2%; }
+    .finance-aff { left:89.0%; top:29.25%; width:1.3%; height:1.2%; }
+    .finance-amb { left:94.0%; top:29.25%; width:1.3%; height:1.2%; }
+    .number-running { left:58.6%; top:34.25%; width:1.3%; height:1.2%; }
+    .number-tender { left:71.8%; top:34.25%; width:1.3%; height:1.2%; }
+    .number-interchange { left:85.5%; top:34.25%; width:1.3%; height:1.2%; }
+    @page { size:A4; margin:0; }
+    @media (max-width:1050px) { .app { grid-template-columns:1fr; } .panel { position:static; } }
+    @media print {
+      body { background:#fff; }
+      .panel { display:none !important; }
+      .app { display:block; padding:0; }
+      .page-wrap { box-shadow:none; overflow:visible; }
+      .page { width:210mm; height:297mm; }
+      .value { color:#0645ad !important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+      .page.edit-mode .value { outline:none; background:transparent; overflow:hidden; }
+      .page.edit-mode .value::before,
+      .page.edit-mode .value::after { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <h1>Retail Customer Order</h1>
+      <p class="intro">填写资料后会自动套入 MM Hiewa 原表。右边是打印预览。</p>
+
+      <label for="name">姓名 / Customer Name</label>
+      <input id="name" autocomplete="name" placeholder="例如：Tan Wei Ming">
+
+      <div class="form-grid-2">
+        <div>
+          <label for="outletCode">Outlet Code</label>
+          <input id="outletCode" placeholder="例如：31K" value="31K">
+        </div>
+        <div>
+          <label for="salesAdvisor">Sales Advisor</label>
+          <input id="salesAdvisor" placeholder="销售员名字">
+        </div>
+      </div>
+
+      <label for="ic">IC / NRIC No.</label>
+      <input id="ic" placeholder="例如：900101-14-5678">
+
+      <label for="phone">联系号码 / Tel & Mobile No.</label>
+      <input id="phone" type="tel" autocomplete="tel" placeholder="例如：012-345 6789">
+
+      <label for="email">Email Address</label>
+      <input id="email" type="email" autocomplete="email" placeholder="例如：customer@email.com">
+
+      <label for="address">地址 / Address</label>
+      <textarea id="address" autocomplete="street-address" placeholder="输入完整地址"></textarea>
+
+      <label for="model">车款 / Make & Model</label>
+      <input id="model" placeholder="例如：Toyota Vios 1.5G AT">
+
+      <label for="modelCode">车款代码 / Model Code</label>
+      <input id="modelCode" placeholder="例如：NSP151R-AEXGKT">
+
+      <label for="colorName">颜色 / Color Name</label>
+      <input id="colorName" placeholder="例如：Platinum White Pearl">
+
+      <label for="colorCode">颜色代码 / Color Code</label>
+      <input id="colorCode" placeholder="例如：089">
+
+      <label for="yearManufacture">Year Manufacture / 制造年份</label>
+      <input id="yearManufacture" inputmode="numeric" placeholder="例如：2026">
+
+      <label for="hireTenure">Hire Purchase Tenure / 贷款期限（月）</label>
+      <input id="hireTenure" inputmode="numeric" placeholder="例如：84">
+
+      <div class="section-title">可打勾项目</div>
+      <label>Registration Type</label>
+      <div class="check-grid three">
+        <label><input type="checkbox" id="regIndividual"> Individual</label>
+        <label><input type="checkbox" id="regPrivateCompany"> Private Company</label>
+        <label><input type="checkbox" id="regCommercial"> Commercial</label>
+      </div>
+
+      <label>Purchase Type</label>
+      <div class="check-grid three">
+        <label><input type="checkbox" id="purchaseHire"> Hire Purchase</label>
+        <label><input type="checkbox" id="purchaseCash"> Cash</label>
+        <label><input type="checkbox" id="purchaseOrder"> Purchase Order</label>
+      </div>
+
+      <label>Finance Company</label>
+      <div class="check-grid three">
+        <label><input type="checkbox" id="financePbb"> PBB</label>
+        <label><input type="checkbox" id="financeMbb"> MBB</label>
+        <label><input type="checkbox" id="financeTcap"> TCAP</label>
+        <label><input type="checkbox" id="financeHlb"> HLB</label>
+        <label><input type="checkbox" id="financeAff"> AFF</label>
+        <label><input type="checkbox" id="financeAmb"> AMB</label>
+      </div>
+
+      <label>Registration Number Type</label>
+      <div class="check-grid three">
+        <label><input type="checkbox" id="numberRunning"> Running</label>
+        <label><input type="checkbox" id="numberTender"> Tender</label>
+        <label><input type="checkbox" id="numberInterchange"> Interchange</label>
+      </div>
+
+      <label for="regNumber">Registration Number</label>
+      <input id="regNumber" placeholder="例如：JXX 1234">
+
+      <label>Accessories / 配件</label>
+      <div id="accessoryList"></div>
+      <button class="add-accessory" id="addAccessory" type="button">＋ 添加配件</button>
+
+      <label for="price">车价费用 / Selling Price (RM)</label>
+      <input id="price" inputmode="decimal" placeholder="例如：89900">
+
+      <label for="exclusiveColorPrice">Exclusive Color Selection (RM)</label>
+      <input id="exclusiveColorPrice" inputmode="decimal" placeholder="例如：800">
+
+      <label for="insurance">保险费用 / Insurance Premium (RM)</label>
+      <input id="insurance" inputmode="decimal" placeholder="例如：2500">
+
+      <label for="sumInsured">Sum Insured (RM)</label>
+      <input id="sumInsured" inputmode="decimal" placeholder="例如：90000">
+
+      <label for="registrationFee">Registration Fee (RM)</label>
+      <input id="registrationFee" inputmode="decimal" placeholder="例如：300">
+
+      <label for="ownershipFee">Ownership Endorsement Fee (RM)</label>
+      <input id="ownershipFee" inputmode="decimal" placeholder="例如：50">
+
+      <label for="roadTax">Road Tax / Haulage Permit Fee (RM)</label>
+      <input id="roadTax" inputmode="decimal" placeholder="例如：90">
+
+      <label for="puspakom">Puspakom Inspection Fee (RM)</label>
+      <input id="puspakom" inputmode="decimal" placeholder="例如：30">
+
+      <label for="otherCharges">Handling / Transport / Other Charges (RM)</label>
+      <input id="otherCharges" inputmode="decimal" placeholder="例如：500">
+
+      <label for="bookingFee">Booking Fee — 扣除 (RM)</label>
+      <input id="bookingFee" inputmode="decimal" placeholder="例如：1000">
+
+      <div class="section-title">Discount / Trade In / Loan</div>
+      <label for="eDiscount">E-Discount (RM)</label>
+      <input id="eDiscount" inputmode="decimal" placeholder="例如：500">
+
+      <label for="tradeInLess">Less: Trade In (RM)</label>
+      <input id="tradeInLess" inputmode="decimal" placeholder="例如：30000">
+
+      <label for="hpSettlement">Add HP Settlement of Trade-In (RM)</label>
+      <input id="hpSettlement" inputmode="decimal" placeholder="例如：12000">
+
+      <label for="loanAmount">Loan Amount — 扣除 (RM)</label>
+      <input id="loanAmount" inputmode="decimal" placeholder="例如：70000">
+
+      <div class="section-title">Trade-in Particular</div>
+      <label for="tradeModel">Model Description</label>
+      <input id="tradeModel" placeholder="旧车车型">
+
+      <label for="tradeReg">Registration Number</label>
+      <input id="tradeReg" placeholder="旧车车牌">
+
+      <label for="tradeYear">Year of Manufacturing</label>
+      <input id="tradeYear" inputmode="numeric" placeholder="例如：2019">
+
+      <label for="tradeAppraisal">Appraisal Number</label>
+      <input id="tradeAppraisal" placeholder="Appraisal number">
+
+      <label for="deliveryDate">Estimated Delivery Date</label>
+      <input id="deliveryDate" type="date">
+
+      <div class="section-title">Agreement</div>
+      <label for="agreementDeposit">Deposit Amount (RM)</label>
+      <input id="agreementDeposit" inputmode="decimal" placeholder="例如：1000">
+
+      <label for="agreementReceipt">Receipt Number</label>
+      <input id="agreementReceipt" placeholder="Receipt no.">
+
+      <label for="dateInput">日期 / Date</label>
+      <input id="dateInput" type="date">
+
+      <label for="remarks">Remarks / 备注</label>
+      <textarea id="remarks" placeholder="输入需要显示在订单上的备注"></textarea>
+
+      <div class="total-card"><span>总价金额 / Total Sales Price</span><strong id="calculatedTotal">RM 0.00</strong></div>
+      <div class="total-card"><span>扣除 Booking Fee 后应付</span><strong id="calculatedDue">RM 0.00</strong></div>
+
+      <div class="buttons">
+        <button id="clear" type="button">清空</button>
+        <button id="print" type="button">生成 PDF</button>
+      </div>
+      <button id="layoutMode" type="button">调整文字位置</button>
+      <button id="resetLayout" type="button">恢复原来位置</button>
+      <div class="layout-help" id="layoutHelp">橙色框就是可移动栏位。拖动橙色框可以改位置；拖右下角的小角可以改大小；也可以选中后用键盘方向键微调位置。完成后再次点击“完成位置调整”。</div>
+      <p class="tip">打印窗口请选择“另存为 PDF / Save as PDF”，纸张使用 A4、缩放 100%，并关闭页眉和页脚。</p>
+    </section>
+
+    <div class="page-wrap">
+      <article class="page" aria-label="Retail Customer Order preview">
+        <img class="template" src="rco-mm-hiewa-blank.png" alt="MM Hiewa Retail Customer Order blank form">
+        <div class="value outlet-code" data-out="outletCode"></div>
+        <div class="value name-address" data-out="nameAddress"></div>
+        <div class="value ic" data-out="ic"></div>
+        <div class="value email" data-out="email"></div>
+        <div class="value phone" data-out="phone"></div>
+        <div class="value date" data-out="date"></div>
+        <div class="value sales-advisor" data-out="salesAdvisor"></div>
+        <div class="value model" data-out="model"></div>
+        <div class="value model-code" data-out="modelCode"></div>
+        <div class="value color-code" data-out="colorCode"></div>
+        <div class="value color-name" data-out="colorName"></div>
+        <div class="value year-manufacture" data-out="yearManufacture"></div>
+        <div class="value hire-tenure" data-out="hireTenure"></div>
+        <div class="value remarks" data-out="remarks"></div>
+        <div class="value price" data-out="price"></div>
+        <div class="value exclusive-color-price" data-out="exclusiveColorPrice"></div>
+        <div class="value accessories-output" data-out="accessories"></div>
+        <div class="value accessories-price" data-out="accessoryPrices"></div>
+        <div class="value sum-insured" data-out="sumInsured"></div>
+        <div class="value insurance" data-out="insurance"></div>
+        <div class="value total" data-out="total"></div>
+        <div class="value registration-fee" data-out="registrationFee"></div>
+        <div class="value ownership-fee" data-out="ownershipFee"></div>
+        <div class="value road-tax" data-out="roadTax"></div>
+        <div class="value puspakom" data-out="puspakom"></div>
+        <div class="value other-charges" data-out="otherCharges"></div>
+        <div class="value e-discount" data-out="eDiscount"></div>
+        <div class="value trade-in-less" data-out="tradeInLess"></div>
+        <div class="value hp-settlement" data-out="hpSettlement"></div>
+        <div class="value net-invoice" data-out="netInvoice"></div>
+        <div class="value booking-fee" data-out="bookingFee"></div>
+        <div class="value amount-due" data-out="amountDue"></div>
+        <div class="value loan-amount" data-out="loanAmount"></div>
+        <div class="value customer-balance" data-out="customerBalance"></div>
+        <div class="value reg-number" data-out="regNumber"></div>
+        <div class="value trade-model" data-out="tradeModel"></div>
+        <div class="value trade-reg" data-out="tradeReg"></div>
+        <div class="value trade-year" data-out="tradeYear"></div>
+        <div class="value trade-appraisal" data-out="tradeAppraisal"></div>
+        <div class="value delivery-date" data-out="deliveryDate"></div>
+        <div class="value agreement-deposit" data-out="agreementDeposit"></div>
+        <div class="value agreement-receipt" data-out="agreementReceipt"></div>
+        <div class="value checkmark reg-individual" data-out="regIndividual"></div>
+        <div class="value checkmark reg-private-company" data-out="regPrivateCompany"></div>
+        <div class="value checkmark reg-commercial" data-out="regCommercial"></div>
+        <div class="value checkmark purchase-hire" data-out="purchaseHire"></div>
+        <div class="value checkmark purchase-cash" data-out="purchaseCash"></div>
+        <div class="value checkmark purchase-order" data-out="purchaseOrder"></div>
+        <div class="value checkmark finance-pbb" data-out="financePbb"></div>
+        <div class="value checkmark finance-mbb" data-out="financeMbb"></div>
+        <div class="value checkmark finance-tcap" data-out="financeTcap"></div>
+        <div class="value checkmark finance-hlb" data-out="financeHlb"></div>
+        <div class="value checkmark finance-aff" data-out="financeAff"></div>
+        <div class="value checkmark finance-amb" data-out="financeAmb"></div>
+        <div class="value checkmark number-running" data-out="numberRunning"></div>
+        <div class="value checkmark number-tender" data-out="numberTender"></div>
+        <div class="value checkmark number-interchange" data-out="numberInterchange"></div>
+      </article>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const out = key => document.querySelector(`[data-out="${key}"]`);
+    const today = new Date();
+    const localISO = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    $('dateInput').value = localISO;
+
+    const page = document.querySelector('.page');
+    const positionKey = 'mm-hiewa-form-positions-v1';
+    const fieldLabels = {
+      outletCode:'Outlet Code', nameAddress:'姓名/地址', ic:'IC', email:'Email', phone:'电话', date:'日期', salesAdvisor:'Sales Advisor', model:'车款',
+      modelCode:'车款代码', colorCode:'颜色代码', colorName:'颜色', yearManufacture:'年份',
+      hireTenure:'贷款期限', remarks:'备注', price:'车价', exclusiveColorPrice:'特别颜色费', accessories:'配件名称', accessoryPrices:'配件价格', sumInsured:'Sum Insured', insurance:'保险',
+      total:'总价', registrationFee:'Registration', ownershipFee:'Ownership', roadTax:'Road Tax',
+      puspakom:'Puspakom', otherCharges:'Other Charges', eDiscount:'E-Discount', tradeInLess:'Trade In', hpSettlement:'HP Settlement',
+      netInvoice:'Net Invoice', bookingFee:'Booking Fee', amountDue:'Total Due', loanAmount:'Loan Amount', customerBalance:'Customer Balance',
+      regNumber:'车牌号码', tradeModel:'Trade Model', tradeReg:'Trade Reg', tradeYear:'Trade Year', tradeAppraisal:'Appraisal',
+      deliveryDate:'Delivery Date', agreementDeposit:'Deposit', agreementReceipt:'Receipt',
+      regIndividual:'Individual', regPrivateCompany:'Private Co', regCommercial:'Commercial',
+      purchaseHire:'Hire Purchase', purchaseCash:'Cash', purchaseOrder:'Purchase Order',
+      financePbb:'PBB', financeMbb:'MBB', financeTcap:'TCAP', financeHlb:'HLB', financeAff:'AFF', financeAmb:'AMB',
+      numberRunning:'Running', numberTender:'Tender', numberInterchange:'Interchange'
+    };
+    document.querySelectorAll('.value').forEach(el => el.dataset.label = fieldLabels[el.dataset.out] || el.dataset.out);
+
+    function loadPositions() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(positionKey) || '{}');
+        document.querySelectorAll('.value').forEach(el => {
+          const p = saved[el.dataset.out];
+          if (p) {
+            if (p.left) el.style.left = p.left;
+            if (p.top) el.style.top = p.top;
+            if (p.width) el.style.width = p.width;
+            if (p.height) el.style.height = p.height;
+          }
+        });
+      } catch (_) {}
+    }
+
+    function savePositions() {
+      const saved = {};
+      document.querySelectorAll('.value').forEach(el => {
+        saved[el.dataset.out] = {
+          left:el.style.left || `${el.offsetLeft / page.clientWidth * 100}%`,
+          top:el.style.top || `${el.offsetTop / page.clientHeight * 100}%`,
+          width:el.style.width || `${el.offsetWidth / page.clientWidth * 100}%`,
+          height:el.style.height || `${el.offsetHeight / page.clientHeight * 100}%`
+        };
+      });
+      try { localStorage.setItem(positionKey, JSON.stringify(saved)); } catch (_) {}
+    }
+
+    let selectedField = null;
+    let drag = null;
+    let resize = null;
+    document.querySelectorAll('.value').forEach(el => {
+      el.addEventListener('pointerdown', event => {
+        if (!page.classList.contains('edit-mode')) return;
+        event.preventDefault();
+        if (selectedField) selectedField.classList.remove('selected');
+        selectedField = el;
+        selectedField.classList.add('selected');
+        const pageRect = page.getBoundingClientRect();
+        const fieldRect = el.getBoundingClientRect();
+        const isResizeCorner = fieldRect.right - event.clientX <= 14 && fieldRect.bottom - event.clientY <= 14;
+        if (isResizeCorner) {
+          resize = { startX:event.clientX, startY:event.clientY, width:fieldRect.width, height:fieldRect.height, pageWidth:pageRect.width, pageHeight:pageRect.height };
+        } else {
+          drag = { startX:event.clientX, startY:event.clientY, left:fieldRect.left-pageRect.left, top:fieldRect.top-pageRect.top, width:pageRect.width, height:pageRect.height };
+        }
+        el.setPointerCapture(event.pointerId);
+      });
+      el.addEventListener('pointermove', event => {
+        if (resize && selectedField === el) {
+          const nextWidth = Math.max(28, resize.width + event.clientX - resize.startX);
+          const nextHeight = Math.max(12, resize.height + event.clientY - resize.startY);
+          el.style.width = `${(nextWidth / resize.pageWidth * 100).toFixed(3)}%`;
+          el.style.height = `${(nextHeight / resize.pageHeight * 100).toFixed(3)}%`;
+          return;
+        }
+        if (!drag || selectedField !== el) return;
+        el.style.left = `${((drag.left + event.clientX-drag.startX) / drag.width * 100).toFixed(3)}%`;
+        el.style.top = `${((drag.top + event.clientY-drag.startY) / drag.height * 100).toFixed(3)}%`;
+      });
+      el.addEventListener('pointerup', () => {
+        if (drag || resize) savePositions();
+        drag = null;
+        resize = null;
+      });
+    });
+
+    document.addEventListener('keydown', event => {
+      if (!page.classList.contains('edit-mode') || !selectedField || !event.key.startsWith('Arrow')) return;
+      event.preventDefault();
+      const step = event.shiftKey ? 0.1 : 0.03;
+      const left = parseFloat(selectedField.style.left || (selectedField.offsetLeft / page.clientWidth * 100));
+      const top = parseFloat(selectedField.style.top || (selectedField.offsetTop / page.clientHeight * 100));
+      if (event.key === 'ArrowLeft') selectedField.style.left = `${left-step}%`;
+      if (event.key === 'ArrowRight') selectedField.style.left = `${left+step}%`;
+      if (event.key === 'ArrowUp') selectedField.style.top = `${top-step}%`;
+      if (event.key === 'ArrowDown') selectedField.style.top = `${top+step}%`;
+      savePositions();
+    });
+
+    $('layoutMode').addEventListener('click', () => {
+      const editing = page.classList.toggle('edit-mode');
+      $('layoutMode').textContent = editing ? '完成位置调整' : '调整文字位置';
+      $('layoutHelp').classList.toggle('show', editing);
+      $('resetLayout').style.display = editing ? 'block' : 'none';
+      if (!editing) {
+        if (selectedField) selectedField.classList.remove('selected');
+        selectedField = null;
+        savePositions();
+      }
+    });
+
+    $('resetLayout').addEventListener('click', () => {
+      document.querySelectorAll('.value').forEach(el => { el.style.left=''; el.style.top=''; el.style.width=''; el.style.height=''; });
+      try { localStorage.removeItem(positionKey); } catch (_) {}
+    });
+
+    const moneyValue = id => Number($(id).value.replace(/[^0-9.]/g, '')) || 0;
+    const formatMoney = amount => amount.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const formatDate = value => {
+      const d = value ? new Date(`${value}T00:00:00`) : null;
+      return d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` : '';
+    };
+    const check = id => { out(id).textContent = $(id).checked ? '✓' : ''; };
+
+    function addAccessory(name = '', price = '') {
+      const row = document.createElement('div');
+      row.className = 'accessory-row';
+      row.innerHTML = `<input class="acc-name" placeholder="配件名称" value="${name}"><input class="acc-price" inputmode="decimal" placeholder="RM" value="${price}"><button type="button" aria-label="删除配件">×</button>`;
+      row.querySelectorAll('input').forEach(el => el.addEventListener('input', render));
+      row.querySelector('button').addEventListener('click', () => { row.remove(); render(); });
+      $('accessoryList').appendChild(row);
+      render();
+    }
+
+    function render() {
+      const name = $('name').value.trim();
+      const address = $('address').value.trim();
+      out('outletCode').textContent = $('outletCode').value.trim();
+      out('nameAddress').textContent = [name, address].filter(Boolean).join('\n');
+      out('ic').textContent = $('ic').value.trim();
+      out('phone').textContent = $('phone').value.trim();
+      out('email').textContent = $('email').value.trim();
+      out('salesAdvisor').textContent = $('salesAdvisor').value.trim();
+      out('model').textContent = $('model').value.trim();
+      out('modelCode').textContent = $('modelCode').value.trim();
+      out('colorName').textContent = $('colorName').value.trim();
+      out('colorCode').textContent = $('colorCode').value.trim();
+      out('yearManufacture').textContent = $('yearManufacture').value.trim();
+      const tenure = $('hireTenure').value.trim();
+      out('hireTenure').textContent = tenure ? `${tenure} months` : '';
+      out('remarks').textContent = $('remarks').value.trim();
+      const vehiclePrice = moneyValue('price');
+      const exclusiveColorPrice = moneyValue('exclusiveColorPrice');
+      const insurance = moneyValue('insurance');
+      const sumInsured = moneyValue('sumInsured');
+      const registrationFee = moneyValue('registrationFee');
+      const ownershipFee = moneyValue('ownershipFee');
+      const roadTax = moneyValue('roadTax');
+      const puspakom = moneyValue('puspakom');
+      const otherCharges = moneyValue('otherCharges');
+      const bookingFee = moneyValue('bookingFee');
+      const eDiscount = moneyValue('eDiscount');
+      const tradeInLess = moneyValue('tradeInLess');
+      const hpSettlement = moneyValue('hpSettlement');
+      const loanAmount = moneyValue('loanAmount');
+      out('price').textContent = vehiclePrice ? formatMoney(vehiclePrice) : '';
+      out('exclusiveColorPrice').textContent = exclusiveColorPrice ? formatMoney(exclusiveColorPrice) : '';
+      out('insurance').textContent = insurance ? formatMoney(insurance) : '';
+      out('sumInsured').textContent = sumInsured ? formatMoney(sumInsured) : '';
+      out('registrationFee').textContent = registrationFee ? formatMoney(registrationFee) : '';
+      out('ownershipFee').textContent = ownershipFee ? formatMoney(ownershipFee) : '';
+      out('roadTax').textContent = roadTax ? formatMoney(roadTax) : '';
+      out('puspakom').textContent = puspakom ? formatMoney(puspakom) : '';
+      out('otherCharges').textContent = otherCharges ? formatMoney(otherCharges) : '';
+      out('bookingFee').textContent = bookingFee ? formatMoney(bookingFee) : '';
+      out('eDiscount').textContent = eDiscount ? formatMoney(eDiscount) : '';
+      out('tradeInLess').textContent = tradeInLess ? formatMoney(tradeInLess) : '';
+      out('hpSettlement').textContent = hpSettlement ? formatMoney(hpSettlement) : '';
+      out('loanAmount').textContent = loanAmount ? formatMoney(loanAmount) : '';
+      const accessories = [...document.querySelectorAll('.accessory-row')].map(row => ({
+        name: row.querySelector('.acc-name').value.trim(),
+        price: Number(row.querySelector('.acc-price').value.replace(/[^0-9.]/g, '')) || 0
+      })).filter(item => item.name || item.price);
+      const accessoryTotal = accessories.reduce((sum, item) => sum + item.price, 0);
+      out('accessories').textContent = accessories.map(item => item.name || 'Accessory').join('\n\n');
+      out('accessoryPrices').textContent = accessories.map(item => item.price ? formatMoney(item.price) : '').join('\n\n');
+      const total = vehiclePrice + exclusiveColorPrice + insurance + accessoryTotal + registrationFee + ownershipFee + roadTax + puspakom + otherCharges;
+      const netBeforeTrade = total - eDiscount;
+      const netInvoice = netBeforeTrade - tradeInLess + hpSettlement;
+      const amountDue = netInvoice - bookingFee - loanAmount;
+      out('total').textContent = total ? formatMoney(total) : '';
+      out('netInvoice').textContent = netInvoice ? formatMoney(netInvoice) : '';
+      out('amountDue').textContent = amountDue ? formatMoney(amountDue) : '';
+      out('customerBalance').textContent = amountDue ? formatMoney(Math.abs(amountDue)) : '';
+      $('calculatedTotal').textContent = `RM ${formatMoney(total)}`;
+      $('calculatedDue').textContent = `RM ${formatMoney(amountDue)}`;
+      out('date').textContent = formatDate($('dateInput').value);
+      out('deliveryDate').textContent = formatDate($('deliveryDate').value);
+      out('regNumber').textContent = $('regNumber').value.trim();
+      out('tradeModel').textContent = $('tradeModel').value.trim();
+      out('tradeReg').textContent = $('tradeReg').value.trim();
+      out('tradeYear').textContent = $('tradeYear').value.trim();
+      out('tradeAppraisal').textContent = $('tradeAppraisal').value.trim();
+      out('agreementDeposit').textContent = moneyValue('agreementDeposit') ? formatMoney(moneyValue('agreementDeposit')) : '';
+      out('agreementReceipt').textContent = $('agreementReceipt').value.trim();
+      [
+        'regIndividual','regPrivateCompany','regCommercial','purchaseHire','purchaseCash','purchaseOrder',
+        'financePbb','financeMbb','financeTcap','financeHlb','financeAff','financeAmb',
+        'numberRunning','numberTender','numberInterchange'
+      ].forEach(check);
+    }
+
+    document.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', render));
+    $('addAccessory').addEventListener('click', () => addAccessory());
+    $('clear').addEventListener('click', () => {
+      document.querySelectorAll('input:not([type=date]), textarea').forEach(el => el.value = '');
+      document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);
+      $('accessoryList').innerHTML = '';
+      addAccessory();
+      $('dateInput').value = localISO;
+      $('deliveryDate').value = '';
+      render();
+    });
+    $('print').addEventListener('click', () => window.print());
+    addAccessory();
+    loadPositions();
+  </script>
+</body>
+</html>
